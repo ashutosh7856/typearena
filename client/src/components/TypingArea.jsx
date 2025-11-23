@@ -13,6 +13,12 @@ const TypingArea = ({ words, duration, onComplete, isMultiplayer = false }) => {
 
     const inputRef = useRef(null);
     const timerRef = useRef(null);
+    const statsRef = useRef({ wpm: 0, accuracy: 100, mistakes: 0 });
+
+    // Update stats ref whenever they change
+    useEffect(() => {
+        statsRef.current = { wpm, accuracy, mistakes };
+    }, [wpm, accuracy, mistakes]);
 
     useEffect(() => {
         if (isActive && timeLeft > 0) {
@@ -22,10 +28,10 @@ const TypingArea = ({ words, duration, onComplete, isMultiplayer = false }) => {
         } else if (timeLeft === 0) {
             clearInterval(timerRef.current);
             setIsActive(false);
-            onComplete({ wpm, accuracy, mistakes });
+            onComplete(statsRef.current);
         }
         return () => clearInterval(timerRef.current);
-    }, [isActive, timeLeft, onComplete, wpm, accuracy, mistakes]);
+    }, [isActive, timeLeft, onComplete]);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -81,7 +87,7 @@ const TypingArea = ({ words, duration, onComplete, isMultiplayer = false }) => {
         if (currentVal.length === targetText.length) {
             clearInterval(timerRef.current);
             setIsActive(false);
-            onComplete({ wpm, accuracy, mistakes: newMistakes });
+            onComplete({ ...statsRef.current, mistakes: newMistakes });
         }
     };
 
@@ -93,7 +99,8 @@ const TypingArea = ({ words, duration, onComplete, isMultiplayer = false }) => {
                     ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
                     : "text-error drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]";
             } else if (index === input.length) {
-                className += "bg-primary text-transparent animate-pulse rounded-sm px-0.5 relative after:content-[''] after:absolute after:inset-0 after:bg-primary/50 after:blur-sm";
+                // Simple vertical line cursor
+                className += "text-gray-600 border-l-2 border-primary animate-pulse";
             } else {
                 className += "text-gray-600";
             }
