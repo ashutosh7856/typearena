@@ -49,11 +49,6 @@ const Layout = ({ children }) => {
                                 TypeArena
                             </span>
                         </Link>
-
-                        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-xs font-mono text-green-500 tracking-wider">SYSTEM ONLINE</span>
-                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -112,10 +107,6 @@ const Layout = ({ children }) => {
 
             <footer className="border-t border-white/5 py-8 text-center text-gray-600 text-sm relative z-10">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="flex items-center justify-center gap-2 text-accent/80">
-                        <Zap className="w-4 h-4" />
-                        <span className="font-mono">Powered by Native WebSockets</span>
-                    </div>
                     <div className="flex flex-wrap items-center justify-center gap-4">
                         <Link to="/about" className="hover:text-primary transition-colors">About Us</Link>
                         <span className="w-1 h-1 rounded-full bg-gray-700"></span>
@@ -129,6 +120,8 @@ const Layout = ({ children }) => {
                         <span>v1.0.0</span>
                         <span className="w-1 h-1 rounded-full bg-gray-700"></span>
                         <span>&copy; 2025 TypeArena</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-700"></span>
+                        <a href="https://typearena.campusly.tech" className="hover:text-primary transition-colors">typearena.campusly.tech</a>
                     </div>
                 </div>
             </footer>

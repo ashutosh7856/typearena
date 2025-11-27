@@ -27,7 +27,13 @@ const Leaderboards = () => {
     };
 
     const getRankIcon = (rank) => {
-        switch (rank) {
+        // Ensure rank is a number and handle edge cases
+        const rankNum = parseInt(rank);
+        if (isNaN(rankNum) || rankNum <= 0) {
+            return <span className="text-gray-500 font-mono text-sm">#-</span>;
+        }
+
+        switch (rankNum) {
             case 1:
                 return <Trophy className="w-5 h-5 text-yellow-400" />;
             case 2:
@@ -35,7 +41,7 @@ const Leaderboards = () => {
             case 3:
                 return <Award className="w-5 h-5 text-orange-600" />;
             default:
-                return <span className="text-gray-500 font-mono text-sm">#{rank}</span>;
+                return <span className="text-gray-500 font-mono text-sm">#{rankNum}</span>;
         }
     };
 
@@ -60,7 +66,7 @@ const Leaderboards = () => {
                     <Trophy className="w-3 h-3" /> Global Rankings
                 </div>
                 <h1 className="text-5xl font-bold text-white">Leaderboards</h1>
-                <p className="text-gray-400">Compete with the best typists worldwide</p>
+                <p className="text-gray-400 mb-8">Compete with typists worldwide - Ranked by Total Points</p>
             </div>
 
             {/* Tabs */}
@@ -75,8 +81,8 @@ const Leaderboards = () => {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`px-6 py-2 rounded-lg font-bold transition-all duration-300 ${activeTab === tab.id
-                                ? 'bg-primary/20 text-primary border-2 border-primary shadow-[0_0_15px_rgba(217,70,239,0.2)]'
-                                : 'bg-surface border-2 border-white/5 text-gray-500 hover:bg-white/5 hover:border-white/10'
+                            ? 'bg-primary/20 text-primary border-2 border-primary shadow-[0_0_15px_rgba(217,70,239,0.2)]'
+                            : 'bg-surface border-2 border-white/5 text-gray-500 hover:bg-white/5 hover:border-white/10'
                             }`}
                     >
                         {tab.label}
@@ -94,93 +100,119 @@ const Leaderboards = () => {
                 ) : leaderboard.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                         <Trophy className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                        <p>No rankings available yet. Be the first to compete!</p>
+                        {!currentUser ? (
+                            <>
+                                <p className="text-xl font-semibold text-white mb-2">Sign in to view rankings</p>
+                                <p className="mb-4">Login to see how you compare with other typists!</p>
+                                <a
+                                    href="/login"
+                                    className="inline-block px-6 py-3 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg font-bold transition-colors"
+                                >
+                                    Sign In Now
+                                </a>
+                            </>
+                        ) : (
+                            <p>No rankings available yet. Be the first to compete!</p>
+                        )}
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {leaderboard.map((player, index) => {
                             const isCurrentUser = currentUser && player.userId === currentUser.uid;
 
                             return (
                                 <div
                                     key={player.userId}
-                                    className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 ${isCurrentUser
-                                            ? 'bg-primary/10 border-primary shadow-[0_0_20px_rgba(217,70,239,0.3)]'
-                                            : getRankBg(player.rank)
-                                        } hover:scale-[1.02]`}
+                                    className={`
+                                        relative overflow-hidden rounded-lg transition-all duration-300
+                                        ${isCurrentUser
+                                            ? 'bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 shadow-lg'
+                                            : 'bg-surface/50 border border-white/5 hover:border-primary/20 hover:bg-surface/70'
+                                        }
+                                    `}
                                 >
-                                    {/* Rank */}
-                                    <div className="w-12 flex items-center justify-center">
+                                    {/* Rank Badge */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-16 flex items-center justify-center ${isCurrentUser ? 'bg-primary/20' : 'bg-white/5'
+                                        }`}>
                                         {getRankIcon(player.rank)}
                                     </div>
 
-                                    {/* Player Info */}
-                                    <div className="flex items-center gap-3 flex-1">
-                                        {player.photoURL ? (
-                                            <img
-                                                src={player.photoURL}
-                                                alt={player.displayName}
-                                                className="w-12 h-12 rounded-full border-2 border-primary"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                                                <span className="text-primary font-bold">
-                                                    {player.displayName?.charAt(0) || '?'}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div>
-                                            <div className="font-bold text-white flex items-center gap-2">
-                                                {player.displayName}
-                                                {isCurrentUser && (
-                                                    <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                                                        You
+                                    {/* Main Content */}
+                                    <div className="pl-20 pr-4 py-3 flex items-center justify-between gap-4">
+                                        {/* Player Info */}
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            {player.photoURL ? (
+                                                <img
+                                                    src={player.photoURL}
+                                                    alt={player.displayName}
+                                                    className="w-10 h-10 rounded-lg border-2 border-white/10 flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-lg bg-primary/20 border-2 border-white/10 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-primary font-bold text-sm">
+                                                        {player.displayName?.charAt(0) || '?'}
                                                     </span>
-                                                )}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {player.totalMatches} matches played
+                                                </div>
+                                            )}
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-semibold text-white truncate">
+                                                        {player.displayName}
+                                                    </h3>
+                                                    {isCurrentUser && (
+                                                        <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full whitespace-nowrap">
+                                                            You
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-gray-500">
+                                                    {player.totalMatches || 0} matches
+                                                </p>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Stats */}
-                                    <div className="hidden md:flex items-center gap-6">
-                                        <div className="text-center">
-                                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                                                <Zap className="w-3 h-3" />
-                                                Avg WPM
+                                        {/* Stats Grid */}
+                                        <div className="hidden md:flex items-center gap-6">
+                                            {/* Total Points */}
+                                            <div className="text-center">
+                                                <div className="text-xs text-gray-500 mb-0.5">Points</div>
+                                                <div className="text-lg font-bold text-yellow-500 font-mono">
+                                                    {Math.round(player.totalPoints) || 0}
+                                                </div>
                                             </div>
-                                            <div className="text-xl font-bold text-primary font-mono">
-                                                {player.avgWPM}
-                                            </div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                                                <TrendingUp className="w-3 h-3" />
-                                                Best WPM
-                                            </div>
-                                            <div className="text-xl font-bold text-accent font-mono">
-                                                {player.bestWPM}
-                                            </div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                                                <Target className="w-3 h-3" />
-                                                Accuracy
-                                            </div>
-                                            <div className="text-xl font-bold text-success font-mono">
-                                                {player.avgAccuracy}%
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Mobile Stats */}
-                                    <div className="md:hidden text-right">
-                                        <div className="text-2xl font-bold text-primary font-mono">
-                                            {player.avgWPM}
+                                            {/* Avg WPM */}
+                                            <div className="text-center">
+                                                <div className="text-xs text-gray-500 mb-0.5">Avg WPM</div>
+                                                <div className="text-lg font-bold text-primary font-mono">
+                                                    {Math.round(player.avgWPM) || 0}
+                                                </div>
+                                            </div>
+
+                                            {/* Best WPM */}
+                                            <div className="text-center">
+                                                <div className="text-xs text-gray-500 mb-0.5">Best</div>
+                                                <div className="text-lg font-bold text-accent font-mono">
+                                                    {Math.round(player.bestWPM) || 0}
+                                                </div>
+                                            </div>
+
+                                            {/* Accuracy */}
+                                            <div className="text-center">
+                                                <div className="text-xs text-gray-500 mb-0.5">Accuracy</div>
+                                                <div className="text-lg font-bold text-success font-mono">
+                                                    {Math.round(player.avgAccuracy) || 0}%
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-500">WPM</div>
+
+                                        {/* Mobile: Just Points */}
+                                        <div className="md:hidden text-right">
+                                            <div className="text-xs text-gray-500">Points</div>
+                                            <div className="text-xl font-bold text-yellow-500 font-mono">
+                                                {Math.round(player.totalPoints) || 0}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );

@@ -21,7 +21,7 @@ const PrivacyPolicy = () => {
                             Introduction
                         </h2>
                         <p className="text-gray-300 leading-relaxed">
-                            Welcome to TypeArena ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience on our website. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our typing practice and competition platform.
+                            Welcome to TypeArena (accessible at <a href="https://typearena.campusly.tech" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">typearena.campusly.tech</a>). TypeArena is created and maintained by Ashutosh Kumar. We are committed to protecting your privacy and ensuring you have a positive experience on our website. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our typing practice and competition platform.
                         </p>
                     </section>
 
@@ -152,7 +152,8 @@ const PrivacyPolicy = () => {
                             If you have any questions about this Privacy Policy, please contact us:
                         </p>
                         <div className="bg-surface p-4 rounded-lg">
-                            <p className="text-gray-300">Email: <a href="mailto:privacy@typearena.com" className="text-primary hover:underline">privacy@typearena.com</a></p>
+                            <p className="text-gray-300">Website: <a href="https://typearena.campusly.tech" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">typearena.campusly.tech</a></p>
+                            <p className="text-gray-300 mt-2">Creator: Ashutosh Kumar</p>
                             <p className="text-gray-300 mt-2">Or visit our <a href="/contact" className="text-primary hover:underline">Contact Page</a></p>
                         </div>
                     </section>

@@ -19,38 +19,175 @@ console.log('Firebase Admin initialized successfully');
 
 const roomManager = new RoomManager();
 
+// Points calculation helpers
+const DIFFICULTY_MULTIPLIERS = {
+  beginner: 1.0,
+  easy: 1.5,
+  medium: 2.0,
+  hard: 3.0
+};
+
+const calculatePoints = (wpm, accuracy, duration, difficulty) => {
+  const multiplier = DIFFICULTY_MULTIPLIERS[difficulty] || 1.0;
+  const timeInMinutes = duration / 60;
+  return Math.round(wpm * (accuracy / 100) * timeInMinutes * multiplier);
+};
+
 // REST API Routes
 
-// Get leaderboard
+// Get leaderboard with time-period filtering
 app.get('/api/leaderboards/:type', async (req, res) => {
   try {
     const { type } = req.params; // allTime, daily, weekly, monthly
     
-    // Fetch top users by avgWPM
-    const usersSnapshot = await db.collection('users')
-      .orderBy('stats.avgWPM', 'desc')
-      .limit(100)
-      .get();
+    // Calculate date ranges
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeek = new Date(today);
+    thisWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    const leaderboard = [];
-    usersSnapshot.forEach((doc, index) => {
-      const data = doc.data();
-      leaderboard.push({
-        rank: index + 1,
-        userId: doc.id,
-        displayName: data.displayName,
-        photoURL: data.photoURL,
-        avgWPM: data.stats?.avgWPM || 0,
-        bestWPM: data.stats?.bestWPM || 0,
-        avgAccuracy: data.stats?.avgAccuracy || 0,
-        totalMatches: data.stats?.totalMatches || 0
+    let startDate = null;
+    switch (type) {
+      case 'daily':
+        startDate = today;
+        break;
+      case 'weekly':
+        startDate = thisWeek;
+        break;
+      case 'monthly':
+        startDate = thisMonth;
+        break;
+      case 'allTime':
+      default:
+        startDate = null; // No filter
+    }
+    
+    if (startDate) {
+      // Time-period specific: Calculate from matches
+      const matchesSnapshot = await db.collection('matches')
+        .where('timestamp', '>=', startDate)
+        .get()
+        .catch(err => {
+          console.error('Matches query error:', err);
+          return { docs: [] };
+        });
+      
+      // Group matches by user and sum points
+      const userPoints = {};
+      const userStats = {};
+      
+      matchesSnapshot.docs.forEach(doc => {
+        const match = doc.data();
+        const userId = match.userId;
+        
+        if (!userId) return;
+        
+        // Calculate points if not stored
+        const points = match.points || 0;
+        
+        if (!userPoints[userId]) {
+          userPoints[userId] = {
+            totalPoints: 0,
+            matches: 0,
+            totalWPM: 0,
+            bestWPM: 0,
+            totalAccuracy: 0
+          };
+        }
+        
+        userPoints[userId].totalPoints += points;
+        userPoints[userId].matches += 1;
+        userPoints[userId].totalWPM += match.wpm || 0;
+        userPoints[userId].bestWPM = Math.max(userPoints[userId].bestWPM, match.wpm || 0);
+        userPoints[userId].totalAccuracy += match.accuracy || 0;
       });
-    });
-    
-    res.json(leaderboard);
+      
+      // Fetch user details for those with activity
+      const leaderboard = [];
+      const userIds = Object.keys(userPoints);
+      
+      for (const userId of userIds) {
+        const userDoc = await db.collection('users').doc(userId).get().catch(() => null);
+        if (!userDoc || !userDoc.exists) continue;
+        
+        const userData = userDoc.data();
+        const stats = userPoints[userId];
+        
+        // Only include users with actual points in this period
+        if (stats.totalPoints > 0) {
+          leaderboard.push({
+            userId,
+            displayName: userData.displayName || 'Anonymous',
+            photoURL: userData.photoURL || null,
+            totalPoints: Math.round(stats.totalPoints),
+            avgWPM: Math.round(stats.totalWPM / stats.matches),
+            bestWPM: Math.round(stats.bestWPM),
+            avgAccuracy: Math.round(stats.totalAccuracy / stats.matches),
+            totalMatches: stats.matches
+          });
+        }
+      }
+      
+      // Sort by period points
+      leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+      
+      // Add ranks
+      leaderboard.forEach((player, index) => {
+        player.rank = index + 1;
+      });
+      
+      res.json(leaderboard.slice(0, 100)); // Top 100
+      
+    } else {
+      // All-time: Use cumulative stats from users collection
+      const usersSnapshot = await db.collection('users')
+        .limit(100)
+        .get()
+        .catch(err => {
+          console.error('Users query error:', err);
+          return { docs: [] };
+        });
+      
+      const leaderboard = [];
+      usersSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data && data.displayName) {
+          const totalPoints = data.stats?.totalPoints || 0;
+          const avgWPM = data.stats?.avgWPM || 0;
+          
+          if (totalPoints > 0 || avgWPM > 0) {
+            leaderboard.push({
+              userId: doc.id,
+              displayName: data.displayName || 'Anonymous',
+              photoURL: data.photoURL || null,
+              totalPoints: Math.round(totalPoints),
+              avgWPM: Math.round(avgWPM),
+              bestWPM: Math.round(data.stats?.bestWPM || 0),
+              avgAccuracy: Math.round(data.stats?.avgAccuracy || 0),
+              totalMatches: data.stats?.totalMatches || 0
+            });
+          }
+        }
+      });
+      
+      // Sort by totalPoints, fallback to avgWPM
+      leaderboard.sort((a, b) => {
+        const aScore = a.totalPoints > 0 ? a.totalPoints : a.avgWPM;
+        const bScore = b.totalPoints > 0 ? b.totalPoints : b.avgWPM;
+        return bScore - aScore;
+      });
+      
+      // Add ranks
+      leaderboard.forEach((player, index) => {
+        player.rank = index + 1;
+      });
+      
+      res.json(leaderboard);
+    }
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    res.status(200).json([]);
   }
 });
 
@@ -112,7 +249,11 @@ app.get('/api/tournaments', async (req, res) => {
     const snapshot = await query
       .orderBy('createdAt', 'desc')
       .limit(50)
-      .get();
+      .get()
+      .catch(err => {
+        console.error('Tournaments collection error:', err);
+        return { docs: [], forEach: () => {} };
+      });
     
     const tournaments = [];
     snapshot.forEach(doc => {
@@ -122,7 +263,7 @@ app.get('/api/tournaments', async (req, res) => {
     res.json(tournaments);
   } catch (error) {
     console.error('Error fetching tournaments:', error);
-    res.status(500).json({ error: 'Failed to fetch tournaments' });
+    res.status(200).json([]); // Return empty array instead of crashing
   }
 });
 
@@ -150,7 +291,11 @@ app.get('/api/rooms/public', async (req, res) => {
       .where('status', '==', 'waiting')
       .orderBy('createdAt', 'desc')
       .limit(20)
-      .get();
+      .get()
+      .catch(err => {
+        console.error('Public rooms collection error:', err);
+        return { docs: [], forEach: () => {} };
+      });
     
     const rooms = [];
     roomsSnapshot.forEach(doc => {
@@ -160,7 +305,52 @@ app.get('/api/rooms/public', async (req, res) => {
     res.json(rooms);
   } catch (error) {
     console.error('Error fetching public rooms:', error);
-    res.status(500).json({ error: 'Failed to fetch rooms' });
+    res.status(200).json([]);
+  }
+});
+
+// Start tournament
+app.post('/api/tournaments/:id/start', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID required' });
+    }
+    
+    const tournamentRef = db.collection('tournaments').doc(id);
+    const tournamentDoc = await tournamentRef.get();
+    
+    if (!tournamentDoc.exists) {
+      return res.status(404).json({ error: 'Tournament not found' });
+    }
+    
+    const tournament = tournamentDoc.data();
+    
+    // Only creator can start tournament
+    if (tournament.createdBy !== userId) {
+      return res.status(403).json({ error: 'Only the creator can start the tournament' });
+    }
+    
+    if (tournament.status !== 'waiting') {
+      return res.status(400).json({ error: 'Tournament already started or completed' });
+    }
+    
+    if (!tournament.participants || tournament.participants.length < 2) {
+      return res.status(400).json({ error: 'Need at least 2 participants to start' });
+    }
+    
+    // Update tournament status
+    await tournamentRef.update({
+      status: 'active',
+      startedAt: new Date().toISOString()
+    });
+    
+    res.json({ success: true, message: 'Tournament started' });
+  } catch (error) {
+    console.error('Error starting tournament:', error);
+    res.status(500).json({ error: 'Failed to start tournament' });
   }
 });
 

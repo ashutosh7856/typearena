@@ -18,7 +18,7 @@ const TermsOfService = () => {
                     <section>
                         <h2 className="text-2xl font-bold text-white mb-4">Agreement to Terms</h2>
                         <p className="text-gray-300 leading-relaxed">
-                            By accessing or using TypeArena ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service.
+                            By accessing or using TypeArena (accessible at <a href="https://typearena.campusly.tech" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">typearena.campusly.tech</a> and created by Ashutosh Kumar), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, you may not access the Service.
                         </p>
                     </section>
 
@@ -141,7 +141,8 @@ const TermsOfService = () => {
                             If you have any questions about these Terms, please contact us:
                         </p>
                         <div className="bg-surface p-4 rounded-lg">
-                            <p className="text-gray-300">Email: <a href="mailto:legal@typearena.com" className="text-primary hover:underline">legal@typearena.com</a></p>
+                            <p className="text-gray-300">Website: <a href="https://typearena.campusly.tech" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">typearena.campusly.tech</a></p>
+                            <p className="text-gray-300 mt-2">Creator: Ashutosh Kumar</p>
                             <p className="text-gray-300 mt-2">Or visit our <a href="/contact" className="text-primary hover:underline">Contact Page</a></p>
                         </div>
                     </section>

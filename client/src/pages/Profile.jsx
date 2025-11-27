@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserMatches } from '../services/firebaseService';
-import { Trophy, Target, Zap, Calendar, TrendingUp, Users, Medal } from 'lucide-react';
+import { getUserMatches, getLeaderboard } from '../services/firebaseService';
+import { Trophy, Target, Zap, Calendar, TrendingUp, Users, Medal, Award } from 'lucide-react';
 import Card from '../components/ui/Card';
 
 const Profile = () => {
     const { currentUser, userProfile } = useAuth();
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [userRank, setUserRank] = useState(null);
 
     useEffect(() => {
         const fetchMatches = async () => {
@@ -16,6 +17,13 @@ const Profile = () => {
             try {
                 const userMatches = await getUserMatches(currentUser.uid, 20);
                 setMatches(userMatches);
+
+                // Fetch user's rank from leaderboard
+                const leaderboard = await getLeaderboard('allTime');
+                const rankData = leaderboard.find(entry => entry.userId === currentUser.uid);
+                if (rankData) {
+                    setUserRank(rankData.rank);
+                }
             } catch (error) {
                 console.error('Error fetching matches:', error);
             } finally {
@@ -67,8 +75,8 @@ const Profile = () => {
                             <Medal className="w-12 h-12 text-primary" />
                         </div>
                     )}
-                    <div className="absolute -bottom-2 -right-2 px-3 py-1 bg-primary rounded-full text-xs font-bold">
-                        Lvl {Math.floor(stats.totalMatches / 10) + 1}
+                    <div className="absolute -bottom-2 -right-2 px-3 py-1 bg-primary rounded-full text-xs font-bold shadow-lg">
+                        Lvl {Math.floor((stats.totalPoints || stats.totalMatches * 50) / 500) + 1}
                     </div>
                 </div>
 
@@ -76,6 +84,12 @@ const Profile = () => {
                     <h1 className="text-3xl font-bold text-white mb-1">{currentUser.displayName}</h1>
                     <p className="text-gray-400 mb-4">{currentUser.email}</p>
                     <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                        {userRank && (
+                            <div className="px-3 py-1 bg-yellow-500/10 text-yellow-500 text-sm rounded-full border border-yellow-500/20">
+                                <Award className="w-3 h-3 inline mr-1" />
+                                Rank #{userRank}
+                            </div>
+                        )}
                         <div className="px-3 py-1 bg-accent/10 text-accent text-sm rounded-full border border-accent/20">
                             <Calendar className="w-3 h-3 inline mr-1" />
                             Joined {userProfile.createdAt ? formatDate(userProfile.createdAt) : 'Recently'}
@@ -89,7 +103,7 @@ const Profile = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card className="text-center !p-6">
                     <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mb-2">
                         <Zap className="w-4 h-4" />
@@ -119,10 +133,19 @@ const Profile = () => {
 
                 <Card className="text-center !p-6">
                     <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mb-2">
-                        <Calendar className="w-4 h-4" />
+                        <Trophy className="w-4 h-4" />
+                        <span>Total Points</span>
+                    </div>
+                    <div className="text-4xl font-bold text-yellow-500 font-mono">{Math.round(stats.totalPoints || 0)}</div>
+                    <div className="text-xs text-gray-500 mt-1">All Time</div>
+                </Card>
+
+                <Card className="text-center !p-6">
+                    <div className="flex items-center justify-center gap-2 text-gray-400 text-sm mb-2">
+                        <Users className="w-4 h-4" />
                         <span>Total Time</span>
                     </div>
-                    <div className="text-4xl font-bold text-secondary font-mono">{formatTime(stats.totalTimeTyped)}</div>
+                    <div className="text-4xl font-bold text-white font-mono">{formatTime(stats.totalTimeTyped)}</div>
                     <div className="text-xs text-gray-500 mt-1">Typed</div>
                 </Card>
             </div>
@@ -158,10 +181,10 @@ const Profile = () => {
                                         <td className="py-3 text-gray-400">{formatDate(match.timestamp)}</td>
                                         <td className="py-3">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${match.mode === 'tournament'
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : match.mode === 'multi'
-                                                        ? 'bg-accent/10 text-accent'
-                                                        : 'bg-secondary/10 text-secondary'
+                                                ? 'bg-primary/10 text-primary'
+                                                : match.mode === 'multi'
+                                                    ? 'bg-accent/10 text-accent'
+                                                    : 'bg-secondary/10 text-secondary'
                                                 }`}>
                                                 {match.mode || 'single'}
                                             </span>

@@ -89,11 +89,17 @@ const AboutUs = () => {
                 <Card>
                     <h2 className="text-3xl font-bold text-white mb-4 flex items-center gap-2">
                         <Heart className="w-8 h-8 text-error" />
-                        Built With Love
+                        Created By
                     </h2>
-                    <p className="text-gray-300 leading-relaxed">
-                        TypeArena was created by passionate developers who understand the importance of typing skills in today's digital world. We're constantly working to add new features, lessons, and improvements based on community feedback. Our platform is built using modern technologies including React, Firebase, and WebSocket for real-time multiplayer experiences.
+                    <p className="text-gray-300 leading-relaxed mb-4">
+                        TypeArena is a solo project created and maintained by <strong className="text-white">Ashutosh Kumar</strong>. Built with passion for helping people improve their typing skills, this platform combines modern web technologies including React, Firebase, and WebSockets to deliver a seamless competitive typing experience.
                     </p>
+                    <div className="flex items-center gap-2 text-primary">
+                        <Globe className="w-4 h-4" />
+                        <a href="https://typearena.campusly.tech" className="hover:underline font-medium" target="_blank" rel="noopener noreferrer">
+                            typearena.campusly.tech
+                        </a>
+                    </div>
                 </Card>
 
                 <Card className="text-center bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">

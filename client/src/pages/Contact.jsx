@@ -120,14 +120,18 @@ const Contact = () => {
                         <h2 className="text-2xl font-bold text-white mb-4">Contact Information</h2>
                         <div className="space-y-4 text-gray-300">
                             <div>
-                                <h3 className="font-bold text-white mb-1">Email</h3>
-                                <a href="mailto:support@typearena.com" className="text-primary hover:underline">
-                                    support@typearena.com
+                                <h3 className="font-bold text-white mb-1">Website</h3>
+                                <a href="https://typearena.campusly.tech" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                                    typearena.campusly.tech
                                 </a>
                             </div>
                             <div>
-                                <h3 className="font-bold text-white mb-1">Response Time</h3>
-                                <p>We typically respond within 24-48 hours</p>
+                                <h3 className="font-bold text-white mb-1">Creator</h3>
+                                <p>Ashutosh Kumar</p>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white mb-1">Note</h3>
+                                <p>The contact form above is for demonstration purposes. For actual inquiries, please reach out via the website.</p>
                             </div>
                         </div>
                     </Card>
