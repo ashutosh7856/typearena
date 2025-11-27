@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
-import { joinTournament } from '../services/firebaseService';
-import { Trophy, Users, Clock, Sparkles, ArrowLeft, Play } from 'lucide-react';
+import { joinTournament, startTournament } from '../services/firebaseService';
+import { Trophy, Users, Clock, Sparkles, ArrowLeft, Play, Zap, Trash2 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,9 @@ const TournamentDetails = () => {
     const [tournament, setTournament] = useState(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
+    const [starting, setStarting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         fetchTournament();
@@ -50,6 +53,40 @@ const TournamentDetails = () => {
             alert(error.message || 'Failed to join tournament');
         } finally {
             setJoining(false);
+        }
+    };
+
+    const handleStart = async () => {
+        if (!currentUser) return;
+
+        setStarting(true);
+        try {
+            await startTournament(id, currentUser.uid);
+            await fetchTournament(); // Refresh
+        } catch (error) {
+            console.error('Error starting tournament:', error);
+            alert(error.message || 'Failed to start tournament');
+        } finally {
+            setStarting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!currentUser || deleting) return;
+
+        setDeleting(true);
+        try {
+            const response = await fetch(`http://localhost:3000/api/tournaments/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Failed to delete');
+
+            navigate('/tournaments');
+        } catch (error) {
+            console.error('Error deleting tournament:', error);
+            alert('Failed to delete tournament: ' + error.message);
+            setDeleting(false);
         }
     };
 
@@ -98,8 +135,8 @@ const TournamentDetails = () => {
                         <h1 className="text-3xl font-bold text-white mb-2">{tournament.name}</h1>
                         <div className="flex items-center gap-3">
                             <span className={`px-3 py-1 rounded-full text-sm font-bold ${tournament.status === 'waiting' ? 'bg-secondary/10 text-secondary' :
-                                    tournament.status === 'active' ? 'bg-accent/10 text-accent' :
-                                        'bg-success/10 text-success'
+                                tournament.status === 'active' ? 'bg-accent/10 text-accent' :
+                                    'bg-success/10 text-success'
                                 }`}>
                                 {tournament.status === 'waiting' ? 'Open for Registration' :
                                     tournament.status === 'active' ? 'In Progress' : 'Completed'}
@@ -152,28 +189,85 @@ const TournamentDetails = () => {
                 </div>
 
                 {/* Action Buttons */}
-                {tournament.status === 'waiting' && (
-                    <div className="flex gap-3">
-                        {isParticipating ? (
-                            <Button className="flex-1" disabled>
-                                <Play className="w-4 h-4 mr-2" />
-                                Joined - Waiting for Start
-                            </Button>
-                        ) : isFull ? (
-                            <Button className="flex-1" disabled>
-                                Tournament Full
-                            </Button>
-                        ) : currentUser ? (
-                            <Button onClick={handleJoin} className="flex-1" disabled={joining}>
-                                <Play className="w-4 h-4 mr-2" />
+                {tournament.status === 'waiting' && currentUser && (
+                    <Card className="bg-primary/5 border-primary/20">
+                        <h3 className="text-lg font-bold text-white mb-4">Actions</h3>
+
+                        {/* Creator Actions */}
+                        {currentUser.uid === tournament.createdBy ? (
+                            <div className="space-y-3">
+                                {/* Start Button */}
+                                <Button
+                                    onClick={handleStart}
+                                    disabled={starting || !tournament.participants || tournament.participants.length < 2}
+                                    className="w-full gap-2"
+                                >
+                                    {starting ? (
+                                        <>Loading...</>
+                                    ) : (
+                                        <>
+                                            <Zap className="w-4 h-4" />
+                                            Start Tournament
+                                        </>
+                                    )}
+                                </Button>
+
+                                {tournament.participants && tournament.participants.length < 2 && (
+                                    <p className="text-sm text-yellow-500 text-center">
+                                        ⚠️ Need at least 2 participants to start
+                                    </p>
+                                )}
+
+                                {/* Delete Button */}
+                                {!showDeleteConfirm ? (
+                                    <Button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="w-full gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete Tournament
+                                    </Button>
+                                ) : (
+                                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+                                        <p className="text-sm text-red-400 font-semibold text-center">
+                                            ⚠️ Are you sure? This cannot be undone.
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={handleDelete}
+                                                disabled={deleting}
+                                                className="flex-1 bg-red-500 hover:bg-red-600"
+                                            >
+                                                {deleting ? 'Deleting...' : 'Yes, Delete'}
+                                            </Button>
+                                            <Button
+                                                onClick={() => setShowDeleteConfirm(false)}
+                                                className="flex-1 bg-gray-600 hover:bg-gray-700"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : tournament.participants && tournament.participants.includes(currentUser.uid) ? (
+                            /* Already Joined */
+                            <div className="text-center p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                                <p className="text-green-500 font-semibold text-sm">✓ You're registered!</p>
+                                <p className="text-gray-400 text-xs mt-1">Waiting for host to start...</p>
+                            </div>
+                        ) : (
+                            /* Join Button */
+                            <Button
+                                onClick={handleJoin}
+                                disabled={joining}
+                                className="w-full gap-2"
+                            >
+                                <Play className="w-4 h-4" />
                                 {joining ? 'Joining...' : 'Join Tournament'}
                             </Button>
-                        ) : (
-                            <Button onClick={() => navigate('/login')} className="flex-1">
-                                Sign In to Join
-                            </Button>
                         )}
-                    </div>
+                    </Card>
                 )}
             </Card>
 
@@ -225,9 +319,9 @@ const TournamentDetails = () => {
                             <div
                                 key={result.userId}
                                 className={`flex items-center gap-4 p-4 rounded-lg ${index === 0 ? 'bg-yellow-500/10 border-2 border-yellow-500/30' :
-                                        index === 1 ? 'bg-gray-400/10 border-2 border-gray-400/30' :
-                                            index === 2 ? 'bg-orange-600/10 border-2 border-orange-600/30' :
-                                                'bg-surface border border-white/10'
+                                    index === 1 ? 'bg-gray-400/10 border-2 border-gray-400/30' :
+                                        index === 2 ? 'bg-orange-600/10 border-2 border-orange-600/30' :
+                                            'bg-surface border border-white/10'
                                     }`}
                             >
                                 <div className="text-2xl font-bold w-12 text-center">

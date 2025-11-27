@@ -354,6 +354,18 @@ app.post('/api/tournaments/:id/start', async (req, res) => {
   }
 });
 
+// Delete tournament
+app.delete('/api/tournaments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection('tournaments').doc(id).delete();
+    res.json({ success: true, message: 'Tournament deleted' });
+  } catch (error) {
+    console.error('Error deleting tournament:', error);
+    res.status(500).json({ error: 'Failed to delete tournament' });
+  }
+});
+
 // WebSocket handling
 wss.on('connection', (ws) => {
   console.log('New client connected');
