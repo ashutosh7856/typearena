@@ -7,6 +7,7 @@ import { Trophy, Users, Clock, Sparkles, ArrowLeft, Play, Zap, Trash2 } from 'lu
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
+import API_URL from '../config/api';
 
 const TournamentDetails = () => {
     const { id } = useParams();
@@ -76,7 +77,7 @@ const TournamentDetails = () => {
 
         setDeleting(true);
         try {
-            const response = await fetch(`http://localhost:3000/api/tournaments/${id}`, {
+            const response = await fetch(`${API_URL}/api/tournaments/${id}`, {
                 method: 'DELETE',
             });
 

@@ -1,18 +1,19 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
   getDocs,
-  setDoc, 
+  setDoc,
   addDoc,
   updateDoc,
-  query, 
-  where, 
-  orderBy, 
+  query,
+  where,
+  orderBy,
   limit,
   serverTimestamp,
   increment
 } from 'firebase/firestore';
+import API_URL from '../config/api';
 import { db } from '../firebase/firebase';
 
 // Save match result to Firestore
@@ -371,7 +372,7 @@ const updateUserStatsWithPoints = async (userId, matchData) => {
 // Start a tournament
 export const startTournament = async (tournamentId, userId) => {
   try {
-    const response = await fetch(`http://localhost:3000/api/tournaments/${tournamentId}/start`, {
+    const response = await fetch(`${API_URL}/api/tournaments/${tournamentId}/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

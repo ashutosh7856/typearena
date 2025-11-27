@@ -54,3 +54,4 @@ ecosystem.config.js
 # Sensitive configs
 config/secrets.json
 secrets/
+client/.env.example
